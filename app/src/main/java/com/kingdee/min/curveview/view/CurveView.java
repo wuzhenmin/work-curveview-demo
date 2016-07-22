@@ -19,14 +19,11 @@ import com.kingdee.min.curveview.model.Point;
  */
 public class CurveView extends View {
     private Paint mPaint;
-    private Path mPath;
-    private Path mMeasurePath;
-    private Path[] mPaths;
+    private Path curvePath;
     private float[] mPointX = {50, 250, 450, 650, 850};
     private float[] mPointY = {400, 655, 405, 621, 365};
-    private float[] mInterPoint;
     private final float SENSE_AREA = 20;
-    private final double ACCURACY = 0.01;
+    private final float ACCURACY = 0.1f;
     private Point startP;
     private Point endP;
     private Point preContrPoint;
@@ -51,9 +48,7 @@ public class CurveView extends View {
     private void init() {
 
         mPaint = new Paint();
-        mPath = new Path();
-        mMeasurePath = new Path();
-        mPaths = new Path[4];
+        curvePath = new Path();
         mPaint.setStyle(Paint.Style.STROKE);
         mPaint.setStrokeWidth(5);
         startP = new Point();
@@ -64,7 +59,6 @@ public class CurveView extends View {
         currentYPosition = mPointY[1];
         lineSY = 50;
         lineEY = 900;
-        mInterPoint = new float[2];
     }
 
 
@@ -73,8 +67,14 @@ public class CurveView extends View {
 
         drawCurve(canvas);
         drawVerLine(canvas);
+        drawPoint(canvas);
 
-        super.onDraw(canvas);
+    }
+
+    private void drawPoint(Canvas canvas) {
+
+        mPaint.setColor(Color.RED);
+        canvas.drawPoint(currentXPosition, currentYPosition, mPaint);
     }
 
 
@@ -93,8 +93,7 @@ public class CurveView extends View {
                         currentXPosition = mPointX[0];
                         currentYPosition = mPointY[0];
                     } else {
-                        mInterPoint = getPOfInter(currentXPosition);
-                        currentYPosition = mInterPoint[1];
+                        getPOfInter(currentXPosition);
                     }
                     if (mMove != null) {
                         mMove.OnMove(currentXPosition, currentYPosition);
@@ -125,7 +124,7 @@ public class CurveView extends View {
             xLeft = mPointX[i];
             xRight = mPointX[i + 1];
             if (x > xLeft && x < xRight) {
-                if ((x - xLeft) - (xRight - x) > 0.01) {
+                if ((x - xLeft) - (xRight - x) > ACCURACY) {
                     currentYPosition = mPointY[i + 1];
                     return xRight;
                 } else {
@@ -159,54 +158,33 @@ public class CurveView extends View {
         canvas.drawLine(currentXPosition, lineSY, currentXPosition, lineEY, mPaint);
     }
 
-    public float[] getPOfInter(float x) {
+    public void getPOfInter(float eventX) {
         PathMeasure pathMeasure = new PathMeasure();
         float point[] = new float[2];
-        float distance;
-        float halfX;
-        for (int i = 0; i < mPointX.length - 1; i++) {
-            if (x > mPointX[i] && x < mPointX[i + 1]) {
-                startP.setmPointX(mPointX[i]);
-                startP.setmPointY(mPointY[i]);
-                endP.setmPointX(mPointX[i + 1]);
-                endP.setmPointY(mPointY[i + 1]);
+        float start = 0;
+        float mid = 0.5f;
+        float end = 1;
+        pathMeasure.setPath(curvePath, false);
+        float distance = pathMeasure.getLength();
+        do {
+            pathMeasure.getPosTan(distance * mid, point, null);
+            if (eventX > point[0]) {
+                start = end - (end - start) / 2f;
+            } else if (eventX < point[0]) {
+                end = start + (end - start) / 2f;
+            } else {
                 break;
             }
-        }
-
-        for (; ; ) {
-            halfX = (startP.getmPointX() + endP.getmPointX()) / 2f;
-            preContrPoint.setmPointX(halfX);
-            preContrPoint.setmPointY(startP.getmPointY());
-            futureContrPoint.setmPointX(halfX);
-            futureContrPoint.setmPointY(endP.getmPointY());
-            mPath.rewind();
-            mPath.moveTo(startP.getmPointX(), startP.getmPointY());
-            mPath.cubicTo(preContrPoint.getmPointX(), preContrPoint.getmPointY(),
-                    futureContrPoint.getmPointX(), futureContrPoint.getmPointY(),
-                    endP.getmPointX(), endP.getmPointY());
-            pathMeasure.setPath(mPath, false);
-            pathMeasure.getPosTan(pathMeasure.getLength() / 2, point, null);
-            distance = point[0] - x;
-            if (distance >= -ACCURACY && distance <= ACCURACY) {
-                return point;
-            } else {
-                if (distance > 0 && distance > ACCURACY) {
-                    endP.setmPointX(point[0]);
-                    endP.setmPointY(point[1]);
-                } else if (distance < 0 && distance < -ACCURACY) {
-                    startP.setmPointX(point[0]);
-                    startP.setmPointY(point[1]);
-                }
-                continue;
-            }
-        }
+            mid = (start + end) / 2f;
+            Log.e("start-mid-end-X-P", start + "," + mid + "," + end + "," + eventX + "," + point[0]);
+        } while (Math.abs(eventX - point[0]) > ACCURACY);
+        currentXPosition = point[0];
+        currentYPosition = point[1];
     }
 
     private void drawCurve(Canvas canvas) {
-        mPath.rewind();
-
-        mPath.moveTo(mPointX[0], mPointY[0]);
+//        curvePath.rewind();
+//        curvePath.moveTo(mPointX[0], mPointY[0]);
         float midValue;
 
         for (int i = 0; i < mPointX.length - 1; i++) {
@@ -216,17 +194,16 @@ public class CurveView extends View {
             endP.setmPointY(mPointY[i + 1]);
             midValue = (mPointX[i] + mPointX[i + 1]) / 2f;
             preContrPoint.setmPointX(midValue);
-            preContrPoint.setmPointY(mPointY[i]);
+            preContrPoint.setmPointY(startP.getmPointY());
             futureContrPoint.setmPointX(midValue);
             futureContrPoint.setmPointY(endP.getmPointY());
-            mPath.moveTo(startP.getmPointX(), startP.getmPointY());
-            mPath.cubicTo(preContrPoint.getmPointX(), preContrPoint.getmPointY(),
+            curvePath.moveTo(startP.getmPointX(), startP.getmPointY());
+            curvePath.cubicTo(preContrPoint.getmPointX(), preContrPoint.getmPointY(),
                     futureContrPoint.getmPointX(), futureContrPoint.getmPointY(),
                     endP.getmPointX(), endP.getmPointY());
-
         }
         mPaint.setColor(Color.BLACK);
-        canvas.drawPath(mPath, mPaint);
+        canvas.drawPath(curvePath, mPaint);
     }
 
 }
