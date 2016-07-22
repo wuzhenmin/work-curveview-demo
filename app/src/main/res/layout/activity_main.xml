@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".activity.MainActivity">
+
+    <com.kingdee.min.curveview.view.CurveView
+        android:id="@+id/curve_view_id"
+        android:layout_width="match_parent"
+        android:layout_height="750dp"
+        android:layout_above="@+id/linearLayout" />
+
+    <LinearLayout
+        android:id="@+id/linearLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="交点横坐标:"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/tv_x"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:textSize="18sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="交点纵坐标:"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/tv_y"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:textSize="18sp" />
+    </LinearLayout>
+
+
+</RelativeLayout>
