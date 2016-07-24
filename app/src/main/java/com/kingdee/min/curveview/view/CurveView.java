@@ -1,6 +1,7 @@
 package com.kingdee.min.curveview.view;
 
 import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -12,6 +13,7 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.AccelerateDecelerateInterpolator;
 
 import com.kingdee.min.curveview.util.DisplayUtil;
 
@@ -128,6 +130,7 @@ public class CurveView extends View {
                     if (getNearestX(event.getX()) != currentXPosition) {
                         if (mUp != null) {
                             currentXPosition = getNearestX(event.getX());
+                            playAnim(currentXPosition, event.getX());
                             mUp.OnUp(currentXPosition, currentYPosition);
                         }
                     }
@@ -138,6 +141,23 @@ public class CurveView extends View {
                 break;
         }
         return true;
+    }
+
+    private void playAnim(float tagetValue, float startValue) {
+        ValueAnimator valueAnimator = new ValueAnimator();
+        valueAnimator.ofFloat(startValue, tagetValue);
+        valueAnimator.setFloatValues(currentXPosition);
+        valueAnimator.setDuration(600);
+        valueAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
+        valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                PointF pointF = (PointF) animation.getAnimatedValue();
+                currentXPosition = pointF.x;
+                invalidate();
+            }
+        });
+        valueAnimator.start();
     }
 
     public float getNearestX(float x) {
@@ -182,9 +202,9 @@ public class CurveView extends View {
     public void getPOfInter(float eventX) {
         PathMeasure pathMeasure = new PathMeasure();
         float point[] = new float[2];
-        float start = 0;
+        float start = 0f;
         float mid = 0.5f;
-        float end = 1;
+        float end = 1f;
         pathMeasure.setPath(curvePath, false);
         float distance = pathMeasure.getLength();
         do {
@@ -216,8 +236,8 @@ public class CurveView extends View {
             curvePath.cubicTo(preContrPoint.x, preContrPoint.y,
                     futureContrPoint.x, futureContrPoint.y,
                     endP.x, endP.y);
+            canvas.drawPath(curvePath, curvePaint);
         }
-        canvas.drawPath(curvePath, curvePaint);
     }
 
 }
