@@ -132,10 +132,10 @@ public class CurveView extends View {
                         if (mUp != null) {
                             currentXPosition = getNearestX(event.getX());
                             playAnim(currentXPosition, event.getX());
-                            mUp.OnUp(currentXPosition, currentYPosition);
+
                         }
                     }
-                    invalidate();
+//                    invalidate();
                 }
                 break;
             default:
@@ -153,6 +153,7 @@ public class CurveView extends View {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
                 currentXPosition = (float) animation.getAnimatedValue();
+                mUp.OnUp(currentXPosition, currentYPosition);
                 invalidate();
             }
         });
