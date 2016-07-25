@@ -29,7 +29,8 @@ public class CurveView extends View {
     private Paint pointPaint;
     private Paint linePaint;
     private Path curvePath;
-    private List<PointF> pointFs = new ArrayList<PointF>();
+    private List<PointF> pointFs;
+    private List<Path> cubicPaths;
     private float[] mPointX = {150, 750, 1350, 1950, 2550};
     private float[] mPointY = {1200, 1900, 1220, 1980, 1320};
     private final float SENSE_AREA = 20;
@@ -42,7 +43,7 @@ public class CurveView extends View {
     private float currentXPosition, currentYPosition;
     private OnMoveActionListener mMove = null;
     private OnUpActionListener mUp = null;
-    private ObjectAnimator lineAnimator;
+    private ValueAnimator valueAnimator;
 
     public CurveView(Context context) {
         this(context, null);
@@ -57,10 +58,10 @@ public class CurveView extends View {
 
 
     private void init() {
-
+        pointFs = new ArrayList<PointF>();
+        cubicPaths = new ArrayList<Path>();
         PointF pointF;
         for (int i = 0; i < mPointX.length; i++) {
-            float hig = getHeight();
             pointF = new PointF(DisplayUtil.px2dp(mPointX[i]), DisplayUtil.px2dp(mPointY[i]));
             pointFs.add(pointF);
         }
@@ -78,7 +79,7 @@ public class CurveView extends View {
         endP = new PointF();
         preContrPoint = new PointF();
         futureContrPoint = new PointF();
-        lineAnimator = new ObjectAnimator();
+        valueAnimator = new ValueAnimator();
 
         currentXPosition = pointFs.get(0).x;
         currentYPosition = pointFs.get(0).y;
@@ -97,7 +98,7 @@ public class CurveView extends View {
     }
 
     private void drawPoint(Canvas canvas) {
-
+//        getPOfInter(currentXPosition);
         canvas.drawCircle(currentXPosition, currentYPosition, 5, pointPaint);
     }
 
@@ -144,7 +145,6 @@ public class CurveView extends View {
     }
 
     private void playAnim(float tagetValue, float startValue) {
-        ValueAnimator valueAnimator = new ValueAnimator();
         valueAnimator.ofFloat(startValue, tagetValue);
         valueAnimator.setFloatValues(currentXPosition);
         valueAnimator.setDuration(600);
@@ -152,8 +152,7 @@ public class CurveView extends View {
         valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
-                PointF pointF = (PointF) animation.getAnimatedValue();
-                currentXPosition = pointF.x;
+                currentXPosition = (float) animation.getAnimatedValue();
                 invalidate();
             }
         });
@@ -202,11 +201,12 @@ public class CurveView extends View {
     public void getPOfInter(float eventX) {
         PathMeasure pathMeasure = new PathMeasure();
         float point[] = new float[2];
-        float start = 0f;
+        float distance;
+        float start = 0;
         float mid = 0.5f;
-        float end = 1f;
+        float end = 1;
         pathMeasure.setPath(curvePath, false);
-        float distance = pathMeasure.getLength();
+        distance = pathMeasure.getLength();
         do {
             pathMeasure.getPosTan(distance * mid, point, null);
             if (eventX > point[0]) {
@@ -226,16 +226,17 @@ public class CurveView extends View {
     private void drawCurve(Canvas canvas) {
         curvePath.rewind();
         float midValue;
+        curvePath.moveTo(pointFs.get(0).x, pointFs.get(0).y);
         for (int i = 0; i < mPointX.length - 1; i++) {
             startP.set(pointFs.get(i));
             endP.set(pointFs.get(i + 1));
             midValue = (startP.x + endP.x) / 2f;
             preContrPoint.set(midValue, startP.x);
             futureContrPoint.set(midValue, endP.y);
-            curvePath.moveTo(startP.x, startP.y);
             curvePath.cubicTo(preContrPoint.x, preContrPoint.y,
                     futureContrPoint.x, futureContrPoint.y,
                     endP.x, endP.y);
+            cubicPaths.add(curvePath);
             canvas.drawPath(curvePath, curvePaint);
         }
     }
